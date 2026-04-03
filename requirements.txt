@@ -1,0 +1,13 @@
+requests==2.32.3
+urllib3==1.26.20
+pyyaml==6.0.1
+pydantic
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websocket-client==1.7.0
+pypdf>=4.0.0
+numpy
+sentence-transformers
+faiss-cpu
+python-multipart
+browser-use>=0.1.40; python_version >= "3.11"

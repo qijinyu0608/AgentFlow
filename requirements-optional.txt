@@ -1,0 +1,1 @@
+browser-use>=0.1.40; python_version >= "3.11"

@@ -1,0 +1,302 @@
+<p align="center"><img src= "https://github.com/user-attachments/assets/33d7a875-f64d-422f-8b51-68fb420c81e2" alt="AgentMesh" width="450" /></p>
+
+<a href="/README.md">English</a> | 中文
+
+AgentMesh是一个开源的 **多智能体 (Multi-Agent) 平台** ，提供开箱即用的Agent开发框架、多Agent间的协同策略、任务规划和自主决策能力。
+在该平台上可以快速构建你的Agent团队，通过多Agent之间的协同完成任务。
+
+## 概述
+
+AgentMesh 采用模块化分层设计，提供灵活且可扩展的多智能体系统构建能力：
+
+<img width="700" alt="agentmesh-architecture-diagram" src="https://github.com/user-attachments/assets/81c78d9f-876b-43b8-a94e-117474b9efc5" />
+
+- **多Agent协同**：支持多Agent角色定义、任务分配、多轮自主决策，即将支持与远程异构Agent的通信协议
+- **多模态模型**：支持 OpenAI、Claude、DeepSeek 等主流大语言模型，统一接口设计支持无缝切换
+- **可扩展工具**：内置搜索引擎、浏览器、文件系统、终端等工具，并将通过支持 MCP 协议获得更多工具扩展
+- **多端运行**：支持命令行、Docker、SDK 等多种运行方式，即将支持 WebUI 及多种常用软件的集成
+
+## Demo
+
+https://github.com/user-attachments/assets/e2e553c9-bc4a-448d-a5d4-61be21765277
+
+## 快速开始
+
+提供三种使用方式快速构建并运行你的 Agent Team：
+
+> 如果你想把当前项目打包成应用，可直接查看：
+> [Windows EXE 打包说明](./package-exe-cn.md)
+> [macOS APP 打包说明](./package-macos-cn.md)
+
+### 1. 终端运行
+
+在终端中命令行中快速运行多智能体团队:
+
+#### 1.1 安装
+
+**环境准备：** 支持 Linux、MacOS、Windows 系统，需要安装 python。
+
+> python 版本推荐使用 3.11+ (如需使用浏览器工具)，至少需要 3.7
+> 以上。下载地址：[python官网](https://www.python.org/downloads/)。
+
+下载项目源码并进入项目目录：
+
+```bash
+git clone https://github.com/MinimalFuture/AgentMesh
+cd AgentMesh
+```
+
+核心依赖安装：
+
+```bash
+pip install -r requirements.txt
+```
+
+如需使用浏览器工具，还需要额外安装依赖 (可选，需要 python3.11+):
+
+```bash
+pip install browser-use==0.1.40
+playwright install
+```
+
+#### 1.2 配置
+
+配置文件为根目录下的 `config.yaml`，包含模型配置和Agent配置，可以从模板文件复制后修改：
+
+```bash
+cp config-template.yaml config.yaml
+```
+
+默认情况下，运行时 SQLite 数据会放在 `data/sqlite/` 下，迁移备份会放在 `data/backups/` 下。
+
+填写需要用到的模型 `api_key`，支持 `openai`、`claude`、`deepseek`、`qwen` 等模型。
+
+> 配置模板中预置了两个示例：
+> - `general_team`：通用智能体，适用于搜索和研究任务。
+> - `software_team`：开发团队，包含产品、工程和测试三个角色，可通过协作开发web网站，交付完整的项目代码和文档
+>
+> 你可以基于配置模板修改或添加自己的自定义团队，为每个智能体设置不同的模型、工具、skill 和系统提示词。
+
+#### 1.2.1 Skills 能力包
+
+AgentMesh 支持轻量的 `skill` 能力包。一个 skill 用来复用提示词片段和默认工具组合。
+
+根目录 `config.yaml` 里可以声明 skill 搜索路径：
+
+```yaml
+skills:
+  paths:
+    - agentmesh/skills
+```
+
+随后在 agent 上按名字引用：
+
+```yaml
+teams:
+  general_team:
+    agents:
+      - name: General Agent
+        system_prompt: 你是一个通用助手。
+        skills:
+          - researcher
+          - writer
+```
+
+每个内置 skill 都放在 `agentmesh/skills/<skill_name>/skill.yaml`：
+
+```yaml
+name: researcher
+description: Structured research and evidence-oriented analysis skill.
+prompt: |
+  Focus on gathering reliable facts before drafting conclusions.
+tools:
+  - google_search
+  - read
+```
+
+运行时会自动把 skill 的 `prompt` 追加到 agent 的 `system_prompt`，并把 `tools` 合并进该 agent 的工具列表。
+
+#### 1.3 运行
+
+你可以直接通过命令运行任务，通过 -t 参数指定配置文件中的团队，通过 -q 参数指定需要提出的问题：
+
+```bash
+python3 main.py -t general_team -q "帮我分析多智能体技术发展趋势"
+python3 main.py -t software_team -q "帮我为AgentMesh项目开发一个预约体验的表单页面"
+```
+
+同时也可以进入命令行交互模式，通过输入问题进行多轮对话：
+
+```bash
+python3 main.py -l                               # 查看可用agent team
+python3 main.py -t general_team                  # 指定一个team后开始多轮对话
+```
+
+### 2. Docker运行
+
+下载 docker compose 配置文件：
+
+```bash
+curl -O https://raw.githubusercontent.com/MinimalFuture/AgentMesh/main/docker-compose.yml
+```
+
+下载配置模板，参考 1.2 中的配置说明，填写`config.yaml`配置文件中的模型API Key：
+
+```bash
+curl -o config.yaml https://raw.githubusercontent.com/MinimalFuture/AgentMesh/main/config-template.yaml
+```
+
+运行docker容器：
+
+```bash
+docker-compose run --rm agentmesh bash
+```
+
+容器启动后将进入命令行，与 1.3 中的使用方式相同，指定team后进入交互模式后即可开始对话：
+
+```bash
+python3 main.py -l                               # 查看可用agent team
+python3 main.py -t general_team                  # 指定一个team后开始多轮对话
+```
+
+### 3. SDK集成
+
+`Agentmesh`的核心模块通过SDK对外提供，开发者可基于该SDK构建智能体及多智能体团队，适用于在已有应用中快速获得多智能体协作能力。
+
+安装SDK依赖:
+
+```bash
+pip install agentmesh-sdk
+```
+
+#### 3.1 单智能体
+
+直接运行单个超级智能体，支持多轮对话：
+
+```python
+from agentmesh import Agent, LLMModel
+from agentmesh.tools import *
+
+# 初始化模型
+model = LLMModel(model="gpt-4.1", api_key="YOUR_API_KEY")
+
+# 创建单个智能体并配置工具
+agent = Agent(
+    name="Assistant",
+    description="通用助手",
+    system_prompt="你是一个善于使用工具解决问题的助手。",
+    model=model,
+    tools=[GoogleSearch(), Calculator()]
+)
+
+# 单次调用
+response = agent.run_stream("帮我分析多智能体技术的最新发展趋势")
+
+# 多轮对话（自动保留上下文）
+agent.run_stream("我的项目名称是 AgentMesh")
+agent.run_stream("帮我为这个项目写一段简介")
+```
+
+#### 3.2 多智能体团队
+
+构建多智能体团队，通过协作完成复杂任务，使用前请替换 `YOUR_API_KEY` 为你的实际API密钥：
+
+```python
+from agentmesh import AgentTeam, Agent, LLMModel
+from agentmesh.tools import *
+
+# model
+model = LLMModel(model="gpt-4.1", api_key="YOUR_API_KEY")
+
+# team build and add agents
+team = AgentTeam(name="software_team", description="A software development team", model=model)
+
+team.add(Agent(name="PM", description="Responsible for product requirements and documentation",
+               system_prompt="You are an experienced product manager who creates clear and comprehensive PRDs"))
+
+team.add(Agent(name="Developer", description="Implements code based on PRDs", model=model,
+               system_prompt="You are a proficient developer who writes clean, efficient, and maintainable code. Follow the PRD requirements precisely.",
+               tools=[Calculator(), GoogleSearch()]))
+
+# run user task
+result = team.run(task="Write a Snake client game")
+```
+
+### 4. Web服务运行
+
+后端与前端分开启动，默认端口分别为 `8001` 和 `3000`。
+
+#### 4.1 启动后端 API
+
+```bash
+python3 main.py -s -p 8001
+```
+
+启动后可访问：
+
+- API 文档：`http://localhost:8001/docs`
+- 健康检查：`http://localhost:8001/api/v1/health`
+
+#### 4.2 启动前端页面
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+默认访问：`http://localhost:3000`
+
+#### 4.3 配置前端 API 地址（可选）
+
+前端通过 `VITE_API_BASE` 连接后端，未配置时默认使用 `http://localhost:8001`。
+
+示例：
+
+```bash
+cd frontend
+VITE_API_BASE=http://127.0.0.1:8001 npm run dev
+```
+
+#### 4.4 常见问题
+
+- WebSocket 连接失败：确认后端已启动且前端指向正确的 `VITE_API_BASE`。
+- 端口冲突：调整 `python3 main.py -s -p <port>`，并同步设置 `VITE_API_BASE`。
+- 反向代理场景：若前端是 `https`，请确保后端也通过 `https/wss` 暴露，避免浏览器混合内容拦截。
+
+可参考运行冒烟清单：`docs/runtime-smoke-checklist.md`
+
+## 详细介绍
+
+### 核心概念
+
+- **Agent**: 智能体，具有特定角色和能力的自主决策单元，可配置模型、系统提示词、工具集和决策逻辑
+- **AgentTeam**: 智能体团队，由多个Agent组成，负责任务分配、上下文管理和协作流程控制
+- **Tool**: 工具，扩展Agent能力的功能模块，如计算器、搜索引擎、浏览器等
+- **Task**: 任务，用户输入的问题或需求，可包含文本、图像等多模态内容
+- **Context**: 上下文，包含团队信息、任务内容和Agent间共享的执行历史
+- **LLMModel**: 大语言模型，支持多种主流大语言模型，统一接口设计
+
+### 模型
+
+- **OpenAI**: 支持 GPT 系列模型，推荐使用 `gpt-4.1`, `gpt-4o`, `gpt-4.1-mini`
+- **Claude**: 支持 Claude系列模型，推荐使用 `claude-sonnet-4-0`, `claude-3-7-sonnet-latest`
+- **DeepSeek**: 支持 DeepSeek 系列模型，推荐使用 `deepseek-chat`
+- **Ollama**: 支持本地部署的开源模型 (即将支持)
+
+### 工具
+
+- **calculator**: 数学计算工具，支持复杂表达式求值
+- **current_time**: 获取当前时间工具，解决模型时间感知问题
+- **browser**: 浏览器操作工具，基于browser-use实现，支持网页访问、内容提取和交互操作
+- **google_search**: 搜索引擎工具，获取最新信息和知识
+- **file_save**: 将Agent输出内容保存在本地工作空间中
+- **terminal**: 终端命令执行工具，支持安全地执行系统命令
+- **MCP**: 通过支持MCP协议获得更多工具能力（即将支持）
+
+## 贡献
+
+⭐️ Star支持和关注本项目，可以接受最新的项目更新通知。
+
+欢迎 [提交PR](https://github.com/MinimalFuture/AgentMesh/pulls)
+来共同参与这个项目，遇到问题或有任何想法可 [提交Issues](https://github.com/MinimalFuture/AgentMesh/issues) 进行反馈。
