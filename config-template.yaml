@@ -10,7 +10,7 @@ models:
   joyai:
     # 言犀（JoyAI）OpenAI 兼容接口
     api_base: "http://api.chatrhino.jd.com/api/v2"
-    api_key: "nEMyRNNrwlRUJtxQ5yEegvseV6r3K8AN"
+    api_key: "YOUR_API_KEY"
     # api: "openai-completions"
     models: [ "Chatrhino-750B" ] # 言犀 750B
 
